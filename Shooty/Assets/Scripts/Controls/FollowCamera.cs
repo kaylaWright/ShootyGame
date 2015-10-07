@@ -46,12 +46,15 @@ public class FollowCamera : MonoBehaviour
 			Vector2 mousePosition = new Vector2(Input.mousePosition.x - Screen.width / 2, Input.mousePosition.y - Screen.height / 2) * stretchMultiplier;
 			Vector3 temp = new Vector3(transform.position.x + mousePosition.x, transform.position.y, transform.position.z + mousePosition.y) + controllerOffset;
 			tempPosition = temp;
+			lastPosition = temp;
+		}
+		else
+		{
+			tempPosition = lastPosition;
 		}
 
 		Vector3 adjustedPosition = Vector3.Lerp(transform.position, tempPosition,  Time.deltaTime);
 		transform.position = adjustedPosition;
-		lastPosition = adjustedPosition;
-		transform.position = lastPosition;
 	}
 
 }
