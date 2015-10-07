@@ -5,6 +5,192 @@ using System.Collections.Generic;
 public class ZoneGenerator : MonoBehaviour 
 {
 	private const float ROOT3DIV2 = 0.866f; 
+	
+	/* MAP FILL */
+	public GameObject[] floorTiles; 
+	public float[] floorTileProbabilities;
+	public Vector2[] floorHeightVariances;
+
+	public GameObject[] wallTiles;
+	public float[] wallTileProbabilities;
+	public Vector2[] wallHeightVariances;
+
+	private List<Zone> zones;
+	
+	public int numberOfTiles = 100;
+
+	private float hexRadius;
+	private float xOffset = 0.0f;
+	private float yOffset = 0.0f;
+
+	void Awake () 
+	{
+		hexRadius = floorTiles[0].GetComponent<MeshRenderer>().bounds.size.x;
+		xOffset = hexRadius * ROOT3DIV2;
+		yOffset = hexRadius * 0.75f;
+
+		zones = new List<Zone>();
+		zones.Add(GenerateRectZone());
+	}
+
+	#region generatingzones
+	private Zone GenerateRectZone()
+	{
+		Vector2 currPos = Vector2.zero;
+		Zone zone = new Zone((int)Mathf.Sqrt(numberOfTiles));
+
+		int half = (int)Mathf.Sqrt(numberOfTiles) / 2;
+
+		//filling zone map according to generated hexes
+		for(int i = -half ; i < half; i++)
+		{
+			for(int j = -half; j < half; j++)
+			{
+
+				
+				currPos = HexOffset(i, j);
+				
+				if(zone.map[i + half, j + half] == 0)
+				{
+					int tileNum = DetermineRandomTile(true);
+					float yPos = Random.Range(floorHeightVariances[tileNum].x, floorHeightVariances[tileNum].y);
+					Vector3 worldPos = new Vector3(currPos.x, yPos, currPos.y);
+					
+					GameObject currHex = Instantiate(floorTiles[tileNum], worldPos, Quaternion.identity) as GameObject;
+					currHex.transform.Rotate(new Vector3(-90.0f, 90.0f, 0.0f));
+					currHex.transform.parent = this.transform;
+					
+					zone.terrainContents.Add(currHex);
+
+				}
+				else if(zone.map[i + half, j + half] == 1)
+				{
+					int tileNum = DetermineRandomTile(false);
+
+					float yPos = Random.Range(wallHeightVariances[tileNum].x, wallHeightVariances[tileNum].y);
+
+					Vector3 worldPos = new Vector3(currPos.x, yPos, currPos.y);
+
+					GameObject currHex = Instantiate(wallTiles[tileNum], worldPos, Quaternion.identity) as GameObject;
+					currHex.transform.Rotate(new Vector3(-90.0f, 90.0f, 0.0f));
+					currHex.transform.parent = this.transform;
+					
+					zone.terrainContents.Add(currHex);
+				}
+
+			}
+		}
+
+		return zone;
+	}
+
+	/*
+	private Zone GenerateHexZone()
+	{
+		Zone zone = new Zone(numberOfTiles);
+
+		int i = 0;
+		int r1 = 0;
+		int r2 = 0;
+
+		for (int q = -numberOfTiles / 2; q < numberOfTiles / 2 ; q++) 
+		{
+			r1 = System.Math.Max(-numberOfTiles / 2, - q - numberOfTiles / 2);
+			r2 = System.Math.Min(numberOfTiles / 2, -q + numberOfTiles / 2);
+
+			for(int r = r1; r <= r2; r++)
+			{
+				int tileNum = DetermineRandomTile();
+				Vector3 position = CalculateWorldPosition(new Vector3(q, r, -q-r), tileNum);
+
+				GameObject currHex = Instantiate(floorTiles[tileNum], position, Quaternion.identity) as GameObject;
+				currHex.transform.Rotate(new Vector3(-90.0f, 90.0f, 0.0f));
+				currHex.transform.parent = this.transform;
+
+				zone.terrainContents.Add (currHex);
+	
+				i++;
+			}
+		}
+
+		return zone; 
+	}
+	  */
+
+	#endregion generatingzones
+
+	#region zoning 
+	private Vector3 CalculateWorldPosition(Vector3 _cubeCoords, int _num)
+	{
+		//        return new ScreenCoordinate(scale * (r-q) * SQRT_3_2, scale * (0.5*(r+q) - s));
+		Vector3 coords = Vector3.zero;
+		coords.x = yOffset / 1.70f * (_cubeCoords.y - _cubeCoords.x);
+		coords.y = Random.Range(floorHeightVariances[_num].x, floorHeightVariances[_num].y);
+		coords.z = xOffset / 1.70f * (0.5f * (_cubeCoords.y + _cubeCoords.x) - _cubeCoords.z);
+
+		return coords;
+	}
+
+
+	private Vector2 HexOffset(int _x, int _y)
+	{
+		Vector2 position = Vector2.zero;
+		
+		if( _y % 2 == 0 ) 
+		{
+			position.x = _x * xOffset;
+			position.y = _y * yOffset;
+		}
+		else 
+		{
+			position.x = ( _x + 0.5f ) * xOffset;
+			position.y = _y * yOffset;
+		}
+		
+		return position;
+	}
+
+	private int DetermineRandomTile(bool _isFloor = true)
+	{
+		int percent = Random.Range(0, 100);
+		int rangeStart = 0;
+		int tileNum = 0;
+
+		if(_isFloor)
+		{
+			for(int n = 0; n < floorTiles.Length; n++)
+			{
+				int endRange = rangeStart + (int)(floorTileProbabilities[n] * 100);
+				
+				if(percent >= rangeStart && percent < endRange)
+				{
+					tileNum = n;
+				}
+				
+				rangeStart = endRange;
+			}
+		}
+		else
+		{
+			for(int n = 0; n < wallTiles.Length; n++)
+			{
+				int endRange = rangeStart + (int)(wallTileProbabilities[n] * 100);
+				
+				if(percent >= rangeStart && percent < endRange)
+				{
+					tileNum = n;
+				}
+				
+				rangeStart = endRange;
+			}
+		}
+
+		return tileNum;
+	}
+
+	#endregion zoning
+
+	#region mapgen
 
 	private class Zone
 	{
@@ -15,23 +201,26 @@ public class ZoneGenerator : MonoBehaviour
 		public int randomFillPercent = 50;
 		public string seed;
 		public int[,] map;
-
+		
 		//terrain contents
 		public List<GameObject> terrainContents;
 		
-		public Zone(int _mapSize) 
+		public Zone(int _mapSize = 100, int _fillPercent = 50, int _smoothings = 5) 
 		{
 			mapSize = _mapSize;
+			randomFillPercent  =_fillPercent;
+			smoothings = _smoothings; 
+			
 			seed = Random.seed.ToString();
 			GenerateMap();
-
+			
 			terrainContents = new List<GameObject>();
 		}
 		
 		void GenerateMap()
 		{
 			map = new int[mapSize, mapSize];
-
+			
 			RandomFillMap();
 			
 			for (int i = 0; i < smoothings; i ++) 
@@ -166,14 +355,14 @@ public class ZoneGenerator : MonoBehaviour
 		void CreatePassage(Room roomA, Room roomB, Coord tileA, Coord tileB) 
 		{
 			Room.ConnectRooms (roomA, roomB);
-
+			
 			List<Coord> line = GetLine(tileA, tileB);
 			foreach(Coord c in line)
 			{
 				DrawCircle(c, 2);
 			}
 		}
-
+		
 		void DrawCircle(Coord _c, int _r)
 		{
 			for(int x = -_r; x <= _r; x++)
@@ -184,16 +373,16 @@ public class ZoneGenerator : MonoBehaviour
 					{
 						int realX = _c.tileX + x; 
 						int realY = _c.tileY + y; 
-
+						
 						if(IsInMapRange(realX, realY))
-						  {
+						{
 							map[realX, realY] = 0;
 						}
 					}
 				}
 			}
 		}
-
+		
 		List<Coord> GetLine(Coord from, Coord to) {
 			List<Coord> line = new List<Coord> ();
 			
@@ -244,7 +433,7 @@ public class ZoneGenerator : MonoBehaviour
 			
 			return line;
 		}
-
+		
 		List<List<Coord>> GetRegions(int tileType) 
 		{
 			List<List<Coord>> regions = new List<List<Coord>>();
@@ -318,7 +507,7 @@ public class ZoneGenerator : MonoBehaviour
 					}
 					else {
 						map[x,y] = (pseudoRandom.Next(0,100) < randomFillPercent)? 1: 0;
-					
+						
 					}
 				}
 			}
@@ -427,177 +616,6 @@ public class ZoneGenerator : MonoBehaviour
 			}
 		}
 	}
-	
-	
-	/* MAP FILLER */
-	public GameObject[] gameTiles; 
-	public GameObject[] wallTiles;
-	public float[] tileProbabilities;
-	
-	private List<Zone> zones;
-	
-	public int numberOfTiles = 100;
 
-	private float hexRadius;
-	private float xOffset = 0.0f;
-	private float yOffset = 0.0f;
-
-	public float heightVariance = 2.0f;
-
-	public float sparseness = 0.2f;
-	public float landHoles = 10.0f;
-	public float lowScatter = -0.25f;
-	public float highScatter = 1.5f;
-
-	void Awake () 
-	{
-		hexRadius = gameTiles[0].GetComponent<MeshRenderer>().bounds.size.x;
-		xOffset = hexRadius * ROOT3DIV2;
-		yOffset = hexRadius * 0.75f;
-
-		zones = new List<Zone>();
-		zones.Add(GenerateRectZone());
-
-	}
-
-	#region generatingzones
-	private Zone GenerateRectZone()
-	{
-		Vector2 currPos = Vector2.zero;
-		Zone zone = new Zone((int)Mathf.Sqrt(numberOfTiles));
-
-		int half = (int)Mathf.Sqrt(numberOfTiles) / 2;
-
-		//filling zone map according to generated hexes
-		for(int i = -half ; i < half; i++)
-		{
-			for(int j = -half; j < half; j++)
-			{
-				int tileNum = DetermineRandomTile();
-				
-				currPos = HexOffset(i, j);
-				
-				if(zone.map[i + half, j + half] == 0)
-				{
-					Vector3 worldPos = new Vector3(currPos.x, Random.Range(-heightVariance, heightVariance), currPos.y);
-					
-					GameObject currHex = Instantiate(gameTiles[tileNum], worldPos, Quaternion.identity) as GameObject;
-					currHex.transform.Rotate(new Vector3(-90.0f, 90.0f, 0.0f));
-					currHex.transform.parent = this.transform;
-					
-					zone.terrainContents.Add(currHex);
-
-				}
-				else if(zone.map[i + half, j + half] == 1)
-				{
-					Vector3 worldPos = new Vector3(currPos.x, 100, currPos.y);
-
-					GameObject currHex = Instantiate(wallTiles[0], worldPos, Quaternion.identity) as GameObject;
-					currHex.transform.Rotate(new Vector3(-90.0f, 90.0f, 0.0f));
-					currHex.transform.parent = this.transform;
-					
-					zone.terrainContents.Add(currHex);
-				}
-
-			}
-		}
-
-		return zone;
-	}
-
-	private Zone GenerateHexZone()
-	{
-		Zone zone = new Zone(numberOfTiles);
-
-		int i = 0;
-		int r1 = 0;
-		int r2 = 0;
-
-		for (int q = -numberOfTiles / 2; q < numberOfTiles / 2 ; q++) 
-		{
-			r1 = System.Math.Max(-numberOfTiles / 2, - q - numberOfTiles / 2);
-			r2 = System.Math.Min(numberOfTiles / 2, -q + numberOfTiles / 2);
-
-			for(int r = r1; r <= r2; r++)
-			{
-				int tileNum = DetermineRandomTile();
-				Vector3 position = CalculateWorldPosition(new Vector3(q, r, -q-r));
-
-				GameObject currHex = Instantiate(gameTiles[tileNum], position, Quaternion.identity) as GameObject;
-				currHex.transform.Rotate(new Vector3(-90.0f, 90.0f, 0.0f));
-				currHex.transform.parent = this.transform;
-
-				zone.terrainContents.Add (currHex);
-	
-				i++;
-			}
-		}
-
-		return zone; 
-	}
-	#endregion generatingzones
-
-	#region zoning 
-	private Vector3 CalculateWorldPosition(Vector3 _cubeCoords)
-	{
-		//        return new ScreenCoordinate(scale * (r-q) * SQRT_3_2, scale * (0.5*(r+q) - s));
-		Vector3 coords = Vector3.zero;
-		coords.x = yOffset / 1.70f * (_cubeCoords.y - _cubeCoords.x);
-		coords.y = Random.Range(-heightVariance, heightVariance);
-		coords.z = xOffset / 1.70f * (0.5f * (_cubeCoords.y + _cubeCoords.x) - _cubeCoords.z);
-
-		return coords;
-	}
-
-
-	private Vector2 HexOffset(int _x, int _y)
-	{
-		Vector2 position = Vector2.zero;
-		
-		if( _y % 2 == 0 ) 
-		{
-			position.x = _x * xOffset;
-			position.y = _y * yOffset;
-		}
-		else 
-		{
-			position.x = ( _x + 0.5f ) * xOffset;
-			position.y = _y * yOffset;
-		}
-		
-		return position;
-	}
-
-	private int DetermineRandomTile()
-	{
-		int percent = Random.Range(0, 100);
-
-		int rangeStart = 0;
-
-		for(int n = 0; n < gameTiles.Length; n++)
-		{
-			int endRange = rangeStart + (int)(tileProbabilities[n] * 100);
-
-			if(percent >= rangeStart && percent < endRange)
-			{
-				return n;
-			}
-
-			rangeStart = endRange;
-		}
-
-		return Random.Range (0, gameTiles.Length);
-	}
-
-	private bool isOnMap(Vector2 _location)
-	{
-		float xVal = (_location.x / numberOfTiles) * landHoles ;
-		float yVal = (_location.y / numberOfTiles) * landHoles ;
-		float value = Mathf.PerlinNoise(xVal, yVal);
-
-		return value > (sparseness + sparseness * Random.Range(lowScatter, highScatter)); 
-	}
-
-	#endregion zoning
-
+	#endregion
 }
