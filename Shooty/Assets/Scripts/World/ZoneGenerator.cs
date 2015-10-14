@@ -37,7 +37,7 @@ public class ZoneGenerator : MonoBehaviour
 	private Zone GenerateRectZone()
 	{
 		Vector2 currPos = Vector2.zero;
-		Zone zone = new Zone((int)Mathf.Sqrt(numberOfTiles));
+		Zone zone = new Zone((int)Mathf.Sqrt(numberOfTiles), 25, 5);
 
 		int half = (int)Mathf.Sqrt(numberOfTiles) / 2;
 

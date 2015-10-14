@@ -26,7 +26,8 @@ public class PlayerMovement : MonoBehaviour
 	private void Update () 
 	{
 		//controlled movement/rotation.
-		moveDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
+
+		moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
 
 		if(moveDirection != Vector3.zero)
 		{
