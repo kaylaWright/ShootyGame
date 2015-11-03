@@ -5,20 +5,25 @@ using System.Collections;
 public class NPC : MonoBehaviour 
 {
 
-	//internal
+	//internal/motive forces
 	public float health = 0.0f;
+	private float hunger = 0.0f;
+	public float hungerTick = 0.0f;
 
 	//vision/pathing/movement
-	private CharacterController contr;
+	public CharacterController contr;
 
 	public float viewRadius = 0.0f; 
 	public float movementSpeed = 0.0f;
 
+	//behaviour
+	protected StateMachine stateMachine = null;
+
 	//wander behaviour
-	public float wanderDirectionChangeTiming = 0.0f;
+	public float wanderDirectionInterval = 0.0f;
 	public float maxHeadingChange = 0.0f;
-	private	float heading = 0.0f;
-	private Vector3 goalRotation = Vector3.zero;
+	public float heading = 0.0f;
+	public Vector3 goalRotation = Vector3.zero;
 
 	//for attacking/defending
 	public GameObject target = null;
@@ -28,31 +33,30 @@ public class NPC : MonoBehaviour
 	//$$$$
 	public float lootDropPercentge = 0.0f;
 
-	void Awake () 
+	protected void Awake () 
 	{
 		contr = gameObject.GetComponent<CharacterController>();
+
+		stateMachine = new StateMachine(this);
+		stateMachine.SwitchState(new IdleState());
+
+		heading = Random.Range(0, 360);
+		transform.eulerAngles = new Vector3(0, heading, 0);
 	}
 
-	void Update () 
+	protected void Update () 
 	{
+		stateMachine.Update();
+
+		CheckState();
+	}
+
+	//should be overriden 
+	protected virtual State CheckState()
+	{
+		return new WanderState();
+	}
 	
-	}
-
-	#pragma region Movement
-
-	public virtual void Move()
-	{
-
-	}
-
-	#pragma region Wander 
-	public void Wander()
-	{
-		Debug.Log ("Wandering!");
-	}
-
-	#pragma endregion
-
 	public void Chase()
 	{
 		Debug.Log ("Chasing!");
@@ -62,10 +66,6 @@ public class NPC : MonoBehaviour
 	{
 		Debug.Log ("Eek! Fleeing!");
 	}
-
-	#pragma endregion
-
-	#pragma region Hobbes
 
 	public virtual void Attack()
 	{
@@ -93,10 +93,6 @@ public class NPC : MonoBehaviour
 		}
 	}
 
-	#pragma endregion
-
-	#pragma internal
-
 	protected bool CheckTargetVisibility()
 	{
 		if(target != null)
@@ -110,5 +106,9 @@ public class NPC : MonoBehaviour
 		return false;
 	}
 
-	#pragma endregion 
+	public void SetHeading(float _new)
+	{
+		heading = _new;
+		goalRotation = new Vector3(0, heading, 0);
+	}
 }
