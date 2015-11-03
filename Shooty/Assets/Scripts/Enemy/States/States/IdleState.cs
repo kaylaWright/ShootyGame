@@ -3,13 +3,11 @@ using System.Collections;
 
 public class IdleState : State 
 {
-	StateMachine machine = null;
 	NPC owner = null;
 	
 	public override void BeginState(StateMachine _machine, NPC _owner)
 	{
 		owner = _owner;
-		machine = _machine;
 		
 		_machine.coroutineHandler.StartCoroutineDelegate(NewHeading);
 	}
@@ -42,7 +40,8 @@ public class IdleState : State
 	{
 		var floor = Mathf.Clamp(owner.heading - owner.maxHeadingChange, 0, 360);
 		var ceil  = Mathf.Clamp(owner.heading + owner.maxHeadingChange, 0, 360);
-		owner.SetHeading(Random.Range(floor, ceil));
+		owner.heading = Random.Range(floor, ceil);
+		owner.goalRotation = new Vector3(0, owner.heading, 0);
 	}
 
 }

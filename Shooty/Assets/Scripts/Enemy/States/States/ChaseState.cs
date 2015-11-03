@@ -1,27 +1,24 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(StateMachine))]
-[RequireComponent(typeof(CharacterController))]
-
-public class WanderState : State
+public class ChaseState : State
 {
 	NPC owner = null;
-
+	
 	public override void BeginState(StateMachine _machine, NPC _owner)
 	{
 		owner = _owner;
-
+		
 		_machine.coroutineHandler.StartCoroutineDelegate(NewHeading);
 	}
-
+	
 	public override void UpdateState(StateMachine _machine)
 	{
 		owner.transform.eulerAngles = Vector3.Slerp(owner.transform.eulerAngles, owner.goalRotation, Time.deltaTime * owner.wanderDirectionInterval);
 		Vector3 forward = owner.transform.TransformDirection(Vector3.forward);
 		owner.contr.SimpleMove(forward * owner.movementSpeed);
 	}
-
+	
 	public override void EndState(StateMachine _machine)
 	{
 		_machine.coroutineHandler.StopAllCoroutines();
@@ -38,9 +35,11 @@ public class WanderState : State
 	
 	public void NewHeadingRoutine ()
 	{
-		var floor = Mathf.Clamp(owner.heading - owner.maxHeadingChange, 0, 360);
-		var ceil  = Mathf.Clamp(owner.heading + owner.maxHeadingChange, 0, 360);
-		owner.heading = Random.Range(floor, ceil);
-		owner.goalRotation = new Vector3(0, owner.heading, 0);
+		if(owner.target != null)
+		{
+			Vector3 direction = owner.target.transform.position - owner.transform.position;
+			Quaternion awayRotation = Quaternion.LookRotation(direction);
+			owner.goalRotation = new Vector3(0.0f, awayRotation.eulerAngles.y, 0.0f);
+		}
 	}
 }

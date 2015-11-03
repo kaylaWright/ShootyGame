@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(CharacterController))]
 public class NPC : MonoBehaviour 
@@ -7,8 +8,8 @@ public class NPC : MonoBehaviour
 
 	//internal/motive forces
 	public float health = 0.0f;
-	private float hunger = 0.0f;
-	public float hungerTick = 0.0f;
+	private float energyStores = 0.0f;
+	private float persistentEnergyDrain = 0.0f;
 
 	//vision/pathing/movement
 	public CharacterController contr;
@@ -27,49 +28,55 @@ public class NPC : MonoBehaviour
 
 	//for attacking/defending
 	public GameObject target = null;
-	//the attack range of the highest-distance weapon the NPC has.
 	public float attackRadius = 0.0f;
+	public List<Attack> weapons; 
+	public const int MINWEAPONS = 1;
+	public int maxWeapons = 0.0f;
 
 	//$$$$
 	public float lootDropPercentge = 0.0f;
 
 	protected void Awake () 
 	{
+		//controller
 		contr = gameObject.GetComponent<CharacterController>();
 
+		//state
 		stateMachine = new StateMachine(this);
 		stateMachine.SwitchState(new IdleState());
 
+		//initial movement.
 		heading = Random.Range(0, 360);
 		transform.eulerAngles = new Vector3(0, heading, 0);
+
+		//attack-related
+		weapons = new List<Attack>();
+		GenerateWeapons();
+	}
+
+	protected virtual void GenerateWeapons()
+	{
 	}
 
 	protected void Update () 
 	{
 		stateMachine.Update();
-
-		CheckState();
 	}
+
+	public virtual void Attack()
+	{
+
+	}
+
+	//may be overriden
+	public virtual void Dodge()
+	{}
+
 
 	//should be overriden 
 	protected virtual State CheckState()
 	{
 		return new WanderState();
-	}
-	
-	public void Chase()
-	{
-		Debug.Log ("Chasing!");
-	}
-
-	public void Flee()
-	{
-		Debug.Log ("Eek! Fleeing!");
-	}
-
-	public virtual void Attack()
-	{
-		Debug.Log ("RAWR! ATTACKING.");
 	}
 
 	public void TakeDamage(float _damage)
@@ -93,7 +100,7 @@ public class NPC : MonoBehaviour
 		}
 	}
 
-	protected bool CheckTargetVisibility()
+	public bool CheckTargetVisibility()
 	{
 		if(target != null)
 		{
@@ -106,9 +113,13 @@ public class NPC : MonoBehaviour
 		return false;
 	}
 
-	public void SetHeading(float _new)
+	public bool GetTargetWithinAttackRange()
 	{
-		heading = _new;
-		goalRotation = new Vector3(0, heading, 0);
+		if(target != null)
+		{
+			return (Vector3.Distance(target.transform.position, gameObject.transform.position) <= attackRadius);
+		}
+
+		return false;
 	}
 }

@@ -3,13 +3,11 @@ using System.Collections;
 
 public class SocializeState : State
 {
-	StateMachine machine = null;
 	NPC owner = null;
 	
 	public override void BeginState(StateMachine _machine, NPC _owner)
 	{
 		owner = _owner;
-		machine = _machine;
 		
 		//_machine.coroutineHandler.StartCoroutineDelegate(NewHeading);
 	}

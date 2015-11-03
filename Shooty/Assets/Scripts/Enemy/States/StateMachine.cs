@@ -40,4 +40,9 @@ public class StateMachine
 			currentState.UpdateState(this);
 		}
 	}
+
+	public bool CheckCurrentState(State _new)
+	{
+		return (_new.GetType() == currentState.GetType());
+	}
 }
