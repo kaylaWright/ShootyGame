@@ -8,8 +8,13 @@ public class NPC : MonoBehaviour
 
 	//internal/motive forces
 	public float health = 0.0f;
+
 	private float energyStores = 0.0f;
 	private float persistentEnergyDrain = 0.0f;
+	public float hungerDesire = 0.0f;
+
+	public float reproductiveDesire = 0.0f;
+	public float minEnergyToReproduce = 0.0f;
 
 	//vision/pathing/movement
 	public CharacterController contr;
@@ -29,14 +34,15 @@ public class NPC : MonoBehaviour
 	//for attacking/defending
 	public GameObject target = null;
 	public float attackRadius = 0.0f;
-	public List<Attack> weapons; 
-	public const int MINWEAPONS = 1;
-	public int maxWeapons = 0.0f;
+
+	public List<Attack> weaponList; 
+	public int minWeapons = 0;
+	public int maxWeapons = 0;
 
 	//$$$$
 	public float lootDropPercentge = 0.0f;
 
-	protected void Awake () 
+	protected void Awake() 
 	{
 		//controller
 		contr = gameObject.GetComponent<CharacterController>();
@@ -50,13 +56,12 @@ public class NPC : MonoBehaviour
 		transform.eulerAngles = new Vector3(0, heading, 0);
 
 		//attack-related
-		weapons = new List<Attack>();
+		weaponList = new List<Attack>();
 		GenerateWeapons();
 	}
 
 	protected virtual void GenerateWeapons()
-	{
-	}
+	{	}
 
 	protected void Update () 
 	{
@@ -64,21 +69,18 @@ public class NPC : MonoBehaviour
 	}
 
 	public virtual void Attack()
-	{
-
-	}
+	{	}
 
 	//may be overriden
 	public virtual void Dodge()
-	{}
-
+	{	}
 
 	//should be overriden 
 	protected virtual State CheckState()
 	{
 		return new WanderState();
 	}
-
+	
 	public void TakeDamage(float _damage)
 	{
 		health -= _damage;

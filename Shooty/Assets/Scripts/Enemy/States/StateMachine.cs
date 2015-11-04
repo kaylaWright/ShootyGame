@@ -17,6 +17,8 @@ public class StateMachine
 		coroutineHolder = new GameObject();
 		coroutineHolder.AddComponent<CoroutineHandler>();
 		coroutineHandler = coroutineHolder.GetComponent<CoroutineHandler>();
+		coroutineHolder.transform.parent = owner.transform;
+		coroutineHolder.name = "Coroutine Manager";
 	}
 	
 	public void SwitchState(State _new)
