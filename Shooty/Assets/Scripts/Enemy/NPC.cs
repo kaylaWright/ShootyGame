@@ -8,10 +8,9 @@ public class NPC : MonoBehaviour
 
 	//internal/motive forces
 	public float health = 0.0f;
-
-	private float energyStores = 0.0f;
-	private float persistentEnergyDrain = 0.0f;
-	public float hungerDesire = 0.0f;
+		
+	public float energyStoredPercent = 0.0f;
+	public float persistentEnergyDrain = 0.0f;
 
 	public float reproductiveDesire = 0.0f;
 	public float minEnergyToReproduce = 0.0f;
@@ -79,6 +78,11 @@ public class NPC : MonoBehaviour
 	protected virtual State CheckState()
 	{
 		return new WanderState();
+	}
+
+	public void SetState(State _new)
+	{
+		stateMachine.SwitchState(_new);
 	}
 	
 	public void TakeDamage(float _damage)

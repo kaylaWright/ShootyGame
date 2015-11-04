@@ -18,6 +18,8 @@ public class Flock : MonoBehaviour
 	//desires
 	public float averageHungerDesire = 0.0f;
 	public float migrationPoint = 0.0f;
+	public float foodKnowledgeRadius = 0.0f;
+	public Transform nearestFoodPoint = null;
 
 	public float averageReproductiveDesire = 0.0f;
 	public float reproductionPoint = 0.0f;
@@ -61,8 +63,6 @@ public class Flock : MonoBehaviour
 
 			GameObject tempMember = Instantiate(flockType) as GameObject;
 			tempMember.transform.position = new Vector3(xPos, this.transform.position.y, zPos);
-			tempMember.GetComponent<FlockingNPC>().parentFlock = this;
-			Debug.Log ("Now.");
 			flock.Add(tempMember.GetComponent<FlockingNPC>());
 
 		}
@@ -83,6 +83,7 @@ public class Flock : MonoBehaviour
 	
 	public void Update()
 	{
+
 	}
 
 
@@ -135,11 +136,43 @@ public class Flock : MonoBehaviour
 
 		for(int i = 0; i < flock.Count; i++)
 		{
-			hunger += flock[i].hungerDesire;
+			hunger += (1 - flock[i].energyStoredPercent);
 			reproduction += flock[i].reproductiveDesire;
 		}
 
 		averageHungerDesire = hunger / flock.Count;
 		averageReproductiveDesire = reproduction / flock.Count; 
+
+		Debug.Log (averageHungerDesire);
+
+		if(averageHungerDesire >= migrationPoint) //&& no food is nearby -> will need to check food proximity.
+		{
+			StartCoroutine("SeekFood");
+		}
+	}
+
+	IEnumerator SeekFood()
+	{
+
+		Debug.Log ("seeking food");
+
+		while(averageHungerDesire >= migrationPoint)
+		{
+			//determine if food source is within 'known' range. 
+			//nearestFoodPoint.position = GenerateFoodPoint();
+
+			//if so, go there immediately.
+			//otherwise, start looking around for food. the flock will be on wander, with the flock members being on follow for it.
+
+			yield return new WaitForSeconds(0.2f);
+		}
+
+		StopCoroutine("SeekFood");
+	}
+
+	private void SeekFoodRoutine()
+	{
+		Debug.Log ("FOOD?");
+		//wander with this as the leader and the Flocking NPCs Following.
 	}
 }
